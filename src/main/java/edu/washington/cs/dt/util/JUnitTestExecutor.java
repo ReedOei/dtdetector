@@ -134,6 +134,10 @@ class JUnitTestExecutor {
         final Set<JUnitTestResult> results = new HashSet<>(knownResults);
         final Map<String, JUnitTest> passingTests = new HashMap<>();
 
+        // To keep track of tests that have multiple errors, so we don't report the result multiple
+        // times.
+        final Set<String> handledTests = new HashSet<>();
+
         // So we can keep track of tests that didn't get run (i.e., skipped).
         final Map<String, JUnitTest> allTests = new HashMap<>(testMap);
 
@@ -152,7 +156,7 @@ class JUnitTestExecutor {
             if (failure.getDescription().isTest()) {
                 final String fullTestName = TestExecUtils.fullName(failure.getDescription());
 
-                if (!checkContains(listener.runtimes(), passingTests, fullTestName)) {
+                if (handledTests.contains(fullTestName) || !checkContains(listener.runtimes(), passingTests, fullTestName)) {
                     continue;
                 }
 
@@ -161,18 +165,20 @@ class JUnitTestExecutor {
                         passingTests.get(fullTestName)));
                 passingTests.remove(fullTestName);
                 allTests.remove(fullTestName);
+                handledTests.add(fullTestName);
             } else {
                 // The ENTIRE class failed, so we need to mark every test from this class as failing.
                 final String className = failure.getDescription().getClassName();
 
                 // Make a set first so that we can modify the original hash map
                 for (final JUnitTest test : testOrder) {
-                    if (test.javaClass().getCanonicalName().equals(className)) {
+                    if (test.javaClass().getCanonicalName().equals(className) && !handledTests.contains(test.name())) {
                         results.add(JUnitTestResult.failOrError(failure, 0, test));
 
                         if (passingTests.containsKey(test.name())) {
                             passingTests.remove(test.name());
                             allTests.remove(test.name());
+                            handledTests.add(test.name());
                         }
                     }
                 }
@@ -180,12 +186,15 @@ class JUnitTestExecutor {
         }
 
         for (final String fullMethodName : listener.ignored()) {
-            results.add(JUnitTestResult.ignored(fullMethodName));
-            allTests.remove(fullMethodName);
+            if (!handledTests.contains(fullMethodName)) {
+                results.add(JUnitTestResult.ignored(fullMethodName));
+                allTests.remove(fullMethodName);
+                handledTests.add(fullMethodName);
+            }
         }
 
         for (final String fullMethodName : passingTests.keySet()) {
-            if (!checkContains(listener.runtimes(), passingTests, fullMethodName)) {
+            if (handledTests.contains(fullMethodName) || !checkContains(listener.runtimes(), passingTests, fullMethodName)) {
                 continue;
             }
 
@@ -194,7 +203,9 @@ class JUnitTestExecutor {
         }
 
         for (final String fullMethodName : allTests.keySet()) {
-            results.add(JUnitTestResult.missing(fullMethodName));
+            if (!handledTests.contains(fullMethodName)) {
+                results.add(JUnitTestResult.missing(fullMethodName));
+            }
         }
 
         return results;
