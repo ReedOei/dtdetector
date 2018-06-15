@@ -37,16 +37,18 @@ public abstract class AbstractTestRunner {
 
 	/* Note that we use List here, since order matters*/
 	public AbstractTestRunner(List<String> tests) {
-		this.junitTestList = new LinkedList<String>();
+	    if (tests.isEmpty()) {
+	        throw new RuntimeException("Cannot create a runner with an empty test list!");
+        }
+		this.junitTestList = new LinkedList<>();
 		this.junitTestList.addAll(tests);
 		this.classPath = System.getProperties().getProperty("java.class.path", null);
 		tmpOutputFile = Main.tmpfile;
 	}
 	//overloaded with tmpfilepath argument (the number of threads is passed in for this)
 	public AbstractTestRunner(List<String> tests, String tmpfilepath) {
-		this.junitTestList = new LinkedList<String>();
-		this.junitTestList.addAll(tests);
-		this.classPath = System.getProperties().getProperty("java.class.path", null);
+		this(tests);
+
 		tmpOutputFile = (Main.tmpfile)+tmpfilepath;
 		this.threadnum = tmpfilepath;
 	}

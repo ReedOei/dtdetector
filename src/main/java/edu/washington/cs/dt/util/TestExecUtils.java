@@ -77,7 +77,6 @@ public class TestExecUtils {
     }
 
     public Map<String, OneTestExecResult> executeTestsInFreshJVMForkTestExecution(String classPath, String outputFile, List<String> tests, String append) {
-
         List<String> commandList = new LinkedList<String>();
         commandList.add("java");
         commandList.add("-cp");

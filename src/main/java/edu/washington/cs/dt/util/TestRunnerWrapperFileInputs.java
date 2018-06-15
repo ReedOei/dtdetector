@@ -56,9 +56,13 @@ public class TestRunnerWrapperFileInputs {
         try {
             /*create the StringBuilder to output results*/
             StringBuilder sb = new StringBuilder();
-            for (final JUnitTestResult result : JUnitTestExecutor.runOrder(tests, skipMissingTests, runSeparately)) {
-                result.output(sb);
-                testsExecuted++;
+            try {
+                for (final JUnitTestResult result : JUnitTestExecutor.runOrder(tests, skipMissingTests, runSeparately)) {
+                    result.output(sb);
+                    testsExecuted++;
+                }
+            } catch (EmptyTestListException e) {
+                System.out.println("Trying to run empty test list (there were " + tests.size() + " tests passed in)!");
             }
 
             //if not exist, create it

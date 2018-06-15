@@ -97,6 +97,9 @@ class JUnitTestExecutor {
             } catch (ExceptionInInitializerError e) {
                 knownResults.add(JUnitTestResult.initFailure(e, fullMethodName));
                 System.out.println("Test failed in initialization: " + fullMethodName);
+            } catch (Throwable e) {
+                System.out.println("[ERROR] Encountered exception while initializing JUnitTest for '" + fullMethodName + "'");
+                throw e;
             }
         }
 
@@ -108,7 +111,13 @@ class JUnitTestExecutor {
 
         for (int i = 0; i < testOrder.size(); i++) {
             final String fullMethodName = testOrder.get(i);
-            tests.add(new JUnitTest(fullMethodName, i));
+
+            try {
+                tests.add(new JUnitTest(fullMethodName, i));
+            } catch (Throwable e) {
+                System.out.println("[ERROR] Encountered exception while initializing JUnitTest for '" + fullMethodName + "'");
+                throw e;
+            }
         }
 
         return new JUnitTestExecutor(tests);

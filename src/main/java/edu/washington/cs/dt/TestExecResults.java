@@ -34,6 +34,8 @@ public class TestExecResults {
 
     @Override
     public String toString() {
+        // BE AWARE: If this is changed, you will also need to change how the Parallelization
+        // handles time orders in dt-impact-tracers (currently in processFile()).
         StringBuilder sb = new StringBuilder();
         for (TestExecResult r : executionRecords) {
             sb.append(Globals.lineSep);

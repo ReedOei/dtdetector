@@ -106,7 +106,7 @@ public class ImpactMain {
         System.out.println(results);
     }
 
-    private static String buildClassPath(String... paths) {
+    public static String buildClassPath(String... paths) {
         StringBuilder sb = new StringBuilder();
         for (String path : paths) {
             if (path.endsWith("*")) {
@@ -124,6 +124,7 @@ public class ImpactMain {
                                 final JarFile jarFile = new JarFile(file);
 
                                 if (jarFile.getJarEntry("org/junit") != null) {
+                                    System.out.println("[INFO] JAR file " + file.getCanonicalPath() + " contains JUnit. Skipping.");
                                     continue;
                                 }
                             } catch (IOException ignored) {}
