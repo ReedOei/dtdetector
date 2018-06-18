@@ -3,6 +3,8 @@
  */
 package edu.washington.cs.dt.util;
 
+import edu.washington.cs.dt.main.ImpactMain;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -44,6 +46,11 @@ public class TestRunnerWrapperFileInputs {
         boolean skipIncompatibleTests = argsList.contains("-skipIncompatibleTests");
         boolean skipMissingTests = argsList.contains("-skipMissingTests");
         boolean runSeparately = argsList.contains("-separate");
+
+        final int timeoutIndex = argsList.indexOf("-timeout");
+        if (timeoutIndex >= 0 && timeoutIndex + 1 < argsList.size()) {
+            ImpactMain.universalTimeout = Long.parseLong(argsList.get(timeoutIndex + 1));
+        }
 
         List<String> tests = new LinkedList<String>();
         for(String line : content) {

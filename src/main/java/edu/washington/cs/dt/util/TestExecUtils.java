@@ -96,6 +96,11 @@ public class TestExecUtils {
         
         commandList.add(append);
 
+        if (ImpactMain.universalTimeout > 0) {
+            commandList.add("-timeout");
+            commandList.add(Long.toString(ImpactMain.universalTimeout));
+        }
+
         if (ImpactMain.skipMissingTests) {
             commandList.add("-skipMissingTests");
         }

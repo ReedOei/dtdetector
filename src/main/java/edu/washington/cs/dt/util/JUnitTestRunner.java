@@ -1,5 +1,6 @@
 package edu.washington.cs.dt.util;
 
+import edu.washington.cs.dt.main.ImpactMain;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -16,6 +17,7 @@ import org.junit.internal.runners.statements.RunBefores;
 import org.junit.rules.MethodRule;
 import org.junit.rules.RunRules;
 import org.junit.rules.TestRule;
+import org.junit.rules.Timeout;
 import org.junit.runner.Description;
 import org.junit.runner.Runner;
 import org.junit.runner.manipulation.Filter;
@@ -31,8 +33,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 public class JUnitTestRunner extends BlockJUnit4ClassRunner {
+    public static final int DEFAULT_TEST_TIMEOUT = 6;
+
     private final Set<String> ranBeforeClassSet = new HashSet<>();
     private final List<JUnitTest> tests = new ArrayList<>();
 
@@ -199,6 +204,14 @@ public class JUnitTestRunner extends BlockJUnit4ClassRunner {
         List<TestRule> result = test.testClass().getAnnotatedMethodValues(target, Rule.class, TestRule.class);
 
         result.addAll(test.testClass().getAnnotatedFieldValues(target, Rule.class, TestRule.class));
+
+        // Add a timeout rule to every test if enabled
+        if (ImpactMain.universalTimeout > 0) {
+            result.add(Timeout.builder()
+                    .withLookingForStuckThread(true)
+                    .withTimeout(ImpactMain.universalTimeout, TimeUnit.SECONDS)
+                    .build());
+        }
 
         return result;
     }

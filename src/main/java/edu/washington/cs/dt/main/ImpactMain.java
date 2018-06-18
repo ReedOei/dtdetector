@@ -26,6 +26,7 @@ public class ImpactMain {
     public static boolean useTimer = false;
     public static boolean skipMissingTests = false;
     public static boolean runSeparately = false;
+    public static long universalTimeout = -1;
 
     public static void main(String[] args) {
         // list to parse the arguments
@@ -80,6 +81,10 @@ public class ImpactMain {
         skipMissingTests = argsList.contains("-skipMissingTests");
         runSeparately = argsList.contains("-separate");
 
+        final int timeoutIndex = argsList.indexOf("-timeout");
+        if (timeoutIndex >= 0 && timeoutIndex + 1 < argsList.size()) {
+            universalTimeout = Long.parseLong(argsList.get(timeoutIndex + 1));
+        }
 
         boolean do_not_fork_test_execution = argsList.contains("-doNotForkTestExecution");
         TestExecUtils.fork_test_execution = !do_not_fork_test_execution;

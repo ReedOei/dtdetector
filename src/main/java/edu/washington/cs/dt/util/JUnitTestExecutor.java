@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 
 /**
@@ -139,7 +140,7 @@ class JUnitTestExecutor {
         return true;
     }
 
-    private Set<JUnitTestResult> results(final Result re, final TestListener listener) {
+    private Set<JUnitTestResult> results(final Result re, final List<JUnitTest> tests, final TestListener listener) {
         final Set<JUnitTestResult> results = new HashSet<>(knownResults);
         final Map<String, JUnitTest> passingTests = new HashMap<>();
 
@@ -148,7 +149,10 @@ class JUnitTestExecutor {
         final Set<String> handledTests = new HashSet<>();
 
         // So we can keep track of tests that didn't get run (i.e., skipped).
-        final Map<String, JUnitTest> allTests = new HashMap<>(testMap);
+        final Set<String> allTests = new HashSet<>();
+        for (final JUnitTest test : tests) {
+            allTests.add(test.name());
+        }
 
         // We can only mark a test as passing if it actually ran.
         for (final String testName : listener.runtimes().keySet()) {
@@ -211,7 +215,7 @@ class JUnitTestExecutor {
             allTests.remove(fullMethodName);
         }
 
-        for (final String fullMethodName : allTests.keySet()) {
+        for (final String fullMethodName : allTests) {
             if (!handledTests.contains(fullMethodName)) {
                 results.add(JUnitTestResult.missing(fullMethodName));
             }
@@ -223,7 +227,7 @@ class JUnitTestExecutor {
     private Set<JUnitTestResult> execute(final List<JUnitTest> tests) {
         // This will happen only if no tests are selected by the filter.
         // In this case, we will throw an exception with a name that makes sense.
-        if (tests.size() == 0) {
+        if (tests.isEmpty()) {
             throw new EmptyTestListException(testOrder);
         }
 
@@ -244,7 +248,7 @@ class JUnitTestExecutor {
 //        System.setOut(currOut);
 //        System.setErr(currErr);
 
-            return results(re, listener);
+            return results(re, tests, listener);
         } catch (InitializationError initializationError) {
             initializationError.printStackTrace();
         }

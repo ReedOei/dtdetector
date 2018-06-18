@@ -4,6 +4,7 @@
 package edu.washington.cs.dt.util;
 
 import edu.washington.cs.dt.RESULT;
+import edu.washington.cs.dt.main.ImpactMain;
 import edu.washington.cs.dt.samples.SampleJUnit3Tests;
 import edu.washington.cs.dt.samples.junit4x.ExampleBeforeClassTests;
 import edu.washington.cs.dt.samples.junit4x.ExampleJunit4xTest;
@@ -167,6 +168,38 @@ public class TestJUnitTestExecutor extends TestCase {
 		expected.put("edu.washington.cs.dt.samples.junit4x.ExampleUsesRules.test1", RESULT.PASS.name());
 
 		checkExpected(expected, executor.executeWithJUnit4Runner());
+	}
+
+	public void testUniversalTimeout() throws Exception {
+		final long originalValue = ImpactMain.universalTimeout;
+		ImpactMain.universalTimeout = 1;
+
+		final Set<JUnitTestResult> results = JUnitTestExecutor
+				.singleton("edu.washington.cs.dt.samples.junit4x.ExampleLongRunningUnitTests.testLongRunningTimesOut")
+				.executeWithJUnit4Runner();
+
+		final Map<String, String> expected = new HashMap<>();
+		expected.put("edu.washington.cs.dt.samples.junit4x.ExampleLongRunningUnitTests.testLongRunningTimesOut", RESULT.ERROR.name());
+
+		checkExpected(expected, results);
+
+		ImpactMain.universalTimeout = originalValue;
+	}
+
+	public void testNoUniversalTimeout() throws Exception {
+		final long originalValue = ImpactMain.universalTimeout;
+		ImpactMain.universalTimeout = -1;
+
+		final Set<JUnitTestResult> results = JUnitTestExecutor
+				.singleton("edu.washington.cs.dt.samples.junit4x.ExampleLongRunningUnitTests.testLongRunningTimesOut")
+				.executeWithJUnit4Runner();
+
+		final Map<String, String> expected = new HashMap<>();
+		expected.put("edu.washington.cs.dt.samples.junit4x.ExampleLongRunningUnitTests.testLongRunningTimesOut", RESULT.PASS.name());
+
+		checkExpected(expected, results);
+
+		ImpactMain.universalTimeout = originalValue;
 	}
 
 	private void checkExpected(final Map<String, String> expected, final Set<JUnitTestResult> results) {
