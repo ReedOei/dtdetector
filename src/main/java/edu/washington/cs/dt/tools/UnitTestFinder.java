@@ -6,6 +6,7 @@ package edu.washington.cs.dt.tools;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -107,24 +108,28 @@ public class UnitTestFinder {
 
 	List<String> getUnitTestsFromClass(Class<?> clz) {
 		List<String> tests = new LinkedList<String>();
-		Method[] methods = clz.getMethods();
-		for(Method method : methods) {
-			boolean isUnitTest = false;
-			if(junit3and4) {
-				isUnitTest = (CodeUtils.isJUnit4XMethod(method) || CodeUtils.isJUnit3XMethod(method));
-			} else {
-			    if(junit4) {
-			    	isUnitTest = CodeUtils.isJUnit4XMethod(method);
-			    } else {
-			    	isUnitTest = CodeUtils.isJUnit3XMethod(method);
-			    }
-			}
 
-			if(isUnitTest) {
-				String testName = clz.getName() + "." + method.getName();
-		        tests.add(testName);
+		if (!Modifier.isAbstract(clz.getModifiers())) {
+			Method[] methods = clz.getMethods();
+			for(Method method : methods) {
+				boolean isUnitTest = false;
+				if(junit3and4) {
+					isUnitTest = (CodeUtils.isJUnit4XMethod(method) || CodeUtils.isJUnit3XMethod(method));
+				} else {
+					if(junit4) {
+						isUnitTest = CodeUtils.isJUnit4XMethod(method);
+					} else {
+						isUnitTest = CodeUtils.isJUnit3XMethod(method);
+					}
+				}
+
+				if(isUnitTest) {
+					String testName = clz.getName() + "." + method.getName();
+					tests.add(testName);
+				}
 			}
 		}
+
 		return tests;
 	}
 
