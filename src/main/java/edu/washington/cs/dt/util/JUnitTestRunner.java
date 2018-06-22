@@ -21,6 +21,7 @@ import org.junit.rules.Timeout;
 import org.junit.runner.Description;
 import org.junit.runner.Runner;
 import org.junit.runner.manipulation.Filter;
+import org.junit.runner.manipulation.NoTestsRemainException;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runner.notification.StoppedByUserException;
 import org.junit.runners.BlockJUnit4ClassRunner;
@@ -311,8 +312,17 @@ public class JUnitTestRunner extends BlockJUnit4ClassRunner {
                 return new Statement() {
                     @Override
                     public void evaluate() throws Throwable {
-                        Filter.matchMethodDescription(test.description()).apply(runner);
-                        runner.run(notifier);
+                        try {
+                            Filter.matchMethodDescription(test.description()).apply(runner);
+                        } catch (NoTestsRemainException ignored) {}
+
+                        // Here we ignore NoTestsRemainException in favor of checking it ourselves.
+                        // This is a workaround specifically for PowerMockRunner, which can chunk
+                        // test methods and incorrectly report that no tests remain, but may also affect other
+                        // custom runners.
+                        if (runner.testCount() > 0) {
+                            runner.run(notifier);
+                        }
                     }
                 };
             } else {
