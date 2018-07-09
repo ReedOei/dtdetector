@@ -46,6 +46,7 @@ public class TestRunnerWrapperFileInputs {
         boolean skipIncompatibleTests = argsList.contains("-skipIncompatibleTests");
         boolean skipMissingTests = argsList.contains("-skipMissingTests");
         boolean runSeparately = argsList.contains("-separate");
+        ImpactMain.captureState = argsList.contains("-captureState");
 
         final int timeoutIndex = argsList.indexOf("-timeout");
         if (timeoutIndex >= 0 && timeoutIndex + 1 < argsList.size()) {

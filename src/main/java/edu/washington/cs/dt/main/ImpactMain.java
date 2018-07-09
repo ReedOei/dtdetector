@@ -26,6 +26,7 @@ public class ImpactMain {
     public static boolean useTimer = false;
     public static boolean skipMissingTests = false;
     public static boolean runSeparately = false;
+    public static boolean captureState = false;
     public static long universalTimeout = -1;
 
     public static void main(String[] args) {

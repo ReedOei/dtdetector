@@ -5,6 +5,8 @@ package edu.washington.cs.dt.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -41,10 +43,18 @@ public class TestExecUtils {
     public static String exitFileName = "EXIT_FILE";
 
     public static boolean fork_test_execution = true;
+    private static Path jarPath = Paths.get(ClassLoader.getSystemClassLoader().getResource(".").getPath());
 
-    public Map<String, OneTestExecResult> executeTestsInFreshJVM(String classPath, String outputFile, List<String> tests, String append) {
+    public Map<String, OneTestExecResult> executeTestsInFreshJVM(String classPath, String outputFile,
+                                                                 List<String> tests, String append) {
+        return executeTestsInFreshJVM(classPath, outputFile, tests, append, "");
+    }
+
+    public Map<String, OneTestExecResult> executeTestsInFreshJVM(String classPath, String outputFile,
+                                                                 List<String> tests, String append,
+                                                                 String javaAgent) {
     	if (fork_test_execution) {
-    		return executeTestsInFreshJVMForkTestExecution(classPath, outputFile, tests, append);
+    		return executeTestsInFreshJVMForkTestExecution(classPath, outputFile, tests, append, javaAgent);
     	} else {
     		List<String> commandList = new LinkedList<String>();
     		Files.createIfNotExistNoExp(testsfile+append);
@@ -76,11 +86,26 @@ public class TestExecUtils {
     	}
     }
 
-    public Map<String, OneTestExecResult> executeTestsInFreshJVMForkTestExecution(String classPath, String outputFile, List<String> tests, String append) {
+    public Map<String, OneTestExecResult> executeTestsInFreshJVMForkTestExecution(String classPath,
+                                                                                  String outputFile,
+                                                                                  List<String> tests,
+                                                                                  String append) {
+        return executeTestsInFreshJVMForkTestExecution(classPath, outputFile, tests, append, "");
+    }
+
+    public Map<String, OneTestExecResult> executeTestsInFreshJVMForkTestExecution(String classPath,
+                                                                                  String outputFile,
+                                                                                  List<String> tests,
+                                                                                  String append,
+                                                                                  String javaAgent) {
         List<String> commandList = new LinkedList<String>();
         commandList.add("java");
+        if (javaAgent != null && !javaAgent.isEmpty() && javaAgent.endsWith("jar")) {
+            commandList.add("-javaagent:" + javaAgent);
+        }
+
         commandList.add("-cp");
-        commandList.add(classPath + Globals.pathSep + System.getProperties().getProperty("java.class.path", null));
+        commandList.add(classPath + Globals.pathSep + System.getProperty("java.class.path", null));
 
 //        if(tests.size() < threshhold) {
 //            commandList.add("edu.washington.cs.dt.util.TestRunnerWrapper");
@@ -95,6 +120,10 @@ public class TestExecUtils {
         commandList.add(testsfile+append);
         
         commandList.add(append);
+
+        if (javaAgent != null && !javaAgent.isEmpty() && javaAgent.endsWith("jar")) {
+            commandList.add("-captureState");
+        }
 
         if (ImpactMain.universalTimeout > 0) {
             commandList.add("-timeout");
@@ -111,6 +140,11 @@ public class TestExecUtils {
 
         //        }
 
+        try {
+            java.nio.file.Files.write(Paths.get("temp.txt"), commandList.toString().getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         String[] args = commandList.toArray(new String[0]);
 
         File exitFile = new File(exitFileName+append);

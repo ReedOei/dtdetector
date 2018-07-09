@@ -3,6 +3,13 @@
  */
 package edu.washington.cs.dt.util;
 
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.DomDriver;
+import edu.illinois.cs.dt.tools.diagnosis.DiffContainer;
+import edu.illinois.diaper.StateCapture;
+import edu.washington.cs.dt.execution.JUnitTestExecution;
+import edu.washington.cs.dt.main.ImpactMain;
+import junit.framework.TestListener;
 import org.junit.runner.Description;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
@@ -10,6 +17,7 @@ import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 import org.junit.runners.model.InitializationError;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -18,15 +26,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
-
 
 /**
  * This class is in too low level. I made it package-visible
  * on purpose.
  * */
-class JUnitTestExecutor {
+public class JUnitTestExecutor {
     private static final PrintStream EMPTY_STREAM = new PrintStream(new OutputStream() {
         public void write(int b) {
             //DO NOTHING
@@ -224,13 +231,61 @@ class JUnitTestExecutor {
         return results;
     }
 
-    private Set<JUnitTestResult> execute(final List<JUnitTest> tests) {
-        // This will happen only if no tests are selected by the filter.
-        // In this case, we will throw an exception with a name that makes sense.
-        if (tests.isEmpty()) {
-            throw new EmptyTestListException(testOrder);
+    /**
+     * This is the method that calls XStream to serialize the state map into a string.
+     *
+     * @param  state  the string to object map representing the roots of the state
+     * @return        string representing the serialized input state
+     */
+    private String serializeRoots(Map<String, DiffContainer> state) {
+        XStream xstream = getXStreamInstance();
+        String s = "";
+        try {
+            s = xstream.toXML(state);
+            s = StateCapture.sanitizeXmlChars(s);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return s;
+    }
+
+    private XStream getXStreamInstance() {
+        XStream xstream = new XStream(new DomDriver());
+        xstream.setMode(XStream.XPATH_ABSOLUTE_REFERENCES);
+        // Set fields to be omitted during serialization
+        xstream.omitField(java.lang.ref.SoftReference.class, "timestamp");
+        xstream.omitField(java.lang.ref.SoftReference.class, "referent");
+        xstream.omitField(java.lang.ref.Reference.class, "referent");
+
+        /*
+        String ignores[][] = new String[][] {
+            {"com.squareup.wire.Wire", "messageAdapters"},
+            {"com.squareup.wire.Wire", "builderAdapters"},
+            {"com.squareup.wire.Wire", "enumAdapters"},
+            {"org.apache.http.impl.conn.CPool", "COUNTER"},
+            {"org.apache.http.impl.conn.ManagedHttpClientConnectionFactory", "COUNTER"},
+            {"org.apache.http.localserver.LocalTestServer", "TEST_SERVER_ADDR"},
+            {"org.apache.http.impl.auth.NTLMEngineImpl", "RND_GEN"}};
+        */
+
+        for (String ignore : StateCapture.ignores) {
+            int lastDot = ignore.lastIndexOf(".");
+            String clz = ignore.substring(0,lastDot);
+            String fld = ignore.substring(lastDot+1);
+            try {
+                xstream.omitField(Class.forName(clz), fld);
+            } catch (Exception ex) {
+                //ex.printStackTrace();
+                //Do not throw runtime exception, since some modules might indeed not
+                //load all classes in the project.
+                //throw new RuntimeException(ex);
+            }
         }
 
+        return xstream;
+    }
+
+    private Set<JUnitTestResult> execute(final JUnitTestRunner runner) {
         final PrintStream currOut = System.out;
         final PrintStream currErr = System.err;
 
@@ -242,18 +297,49 @@ class JUnitTestExecutor {
         final TestListener listener = new TestListener();
         core.addListener(listener);
         final Result re;
-        try {
-            re = core.run(new JUnitTestRunner(tests));
+        re = core.run(runner);
+
+        if (ImpactMain.captureState) {
+            try {
+                Files.writeToFile(serializeRoots(runner.getStateDiffs()), "state-diff.xml");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
 //        System.setOut(currOut);
 //        System.setErr(currErr);
 
-            return results(re, tests, listener);
+        return results(re, runner.tests(), listener);
+    }
+
+    private Set<JUnitTestResult> execute(final List<JUnitTest> tests) {
+        // This will happen only if no tests are selected by the filter.
+        // In this case, we will throw an exception with a name that makes sense.
+        if (tests.isEmpty()) {
+            throw new EmptyTestListException(testOrder);
+        }
+
+        try {
+            return execute(new JUnitTestRunner(tests));
         } catch (InitializationError initializationError) {
             initializationError.printStackTrace();
         }
 
         return new HashSet<>();
+    }
+
+    public Optional<JUnitTestExecution> execute() {
+        try {
+            final JUnitTestRunner runner = new JUnitTestRunner(testOrder);
+            final Set<JUnitTestResult> results = execute(runner);
+
+            return Optional.of(new JUnitTestExecution(results, runner.getStateDiffs()));
+        } catch (InitializationError initializationError) {
+            initializationError.printStackTrace();
+        }
+
+        return Optional.empty();
     }
 
     public Set<JUnitTestResult> executeSeparately() {

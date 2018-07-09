@@ -1,6 +1,10 @@
 package edu.washington.cs.dt.util;
 
+import edu.illinois.cs.dt.tools.diagnosis.DiffContainer;
+import edu.illinois.cs.dt.tools.diagnosis.StateDiff;
+import edu.illinois.diaper.StateCapture;
 import edu.washington.cs.dt.main.ImpactMain;
+import org.custommonkey.xmlunit.Diff;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -31,8 +35,11 @@ import org.junit.runners.model.Statement;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -41,6 +48,7 @@ public class JUnitTestRunner extends BlockJUnit4ClassRunner {
 
     private final Set<String> ranBeforeClassSet = new HashSet<>();
     private final List<JUnitTest> tests = new ArrayList<>();
+    private final Map<String, DiffContainer> stateDiffs = new HashMap<>();
 
     private RunNotifier notifier = null;
 
@@ -48,6 +56,10 @@ public class JUnitTestRunner extends BlockJUnit4ClassRunner {
         // Necessary so we can use all of the JUnit runner code written for BlockJUnit4ClassRunner.
         super(DummyClass.class);
         this.tests.addAll(tests);
+    }
+
+    public Map<String, DiffContainer> getStateDiffs() {
+        return stateDiffs;
     }
 
     @Override
@@ -274,7 +286,11 @@ public class JUnitTestRunner extends BlockJUnit4ClassRunner {
                             beforeClasses(test).evaluate();
                         }
 
-                        statement.evaluate();
+                        if (ImpactMain.captureState) {
+                            stateDiffs.put(test.name(), new StateDiff(test.name()).diff(statement));
+                        } else {
+                            statement.evaluate();
+                        }
 
                         if (isLastMethod(method)) {
                             // Run this way so it doesn't show up in the stack trace for the test and possibly cause the tools
@@ -305,6 +321,8 @@ public class JUnitTestRunner extends BlockJUnit4ClassRunner {
     }
 
     private Statement usingClassRunner(final JUnitTest test) {
+        // TODO: Maybe use JUnit's request/runner mechanisms to accomplish this rather than what we currently have.
+        // Make sure that it fixes the issue mentioned below regarding the NoTestsRemainException and PowerMockRunner.
         try {
             final Runner runner = new AnnotatedBuilder(null).runnerForClass(test.javaClass());
 
@@ -339,5 +357,9 @@ public class JUnitTestRunner extends BlockJUnit4ClassRunner {
             return Description.EMPTY;
         }
         return Description.createTestDescription(method.getMethod().getDeclaringClass(), method.getName());
+    }
+
+    public List<JUnitTest> tests() {
+        return tests;
     }
 }
