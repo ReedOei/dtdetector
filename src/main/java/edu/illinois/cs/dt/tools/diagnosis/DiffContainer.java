@@ -1,7 +1,5 @@
 package edu.illinois.cs.dt.tools.diagnosis;
 
-import com.reedoei.eunomia.collections.MapUtil;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -13,8 +11,14 @@ public class DiffContainer {
     public DiffContainer(final String testName, final Map<String, Object> before, final Map<String, Object> after) {
         this.testName = testName;
 
-        for (final String k : MapUtil.diff(before, after)) {
-            diffs.put(k, new Diff(before.get(k), after.get(k)));
+        for (final String k : after.keySet()) {
+            try {
+                if (!before.containsKey(k) || !after.get(k).equals(before.get(k))) {
+                    diffs.put(k, new Diff(before.get(k), after.get(k)));
+                }
+            } catch (Throwable ignored) {
+                // Catch throwables from equals methods just in case.
+            }
         }
     }
 

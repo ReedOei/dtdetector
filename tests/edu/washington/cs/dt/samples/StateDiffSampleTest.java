@@ -11,6 +11,8 @@ public class StateDiffSampleTest {
 
     @Test
     public void test1() {
+        System.setProperty("test.pollution.property", "false");
+
         x = 4;
         assertEquals(4, x);
     }

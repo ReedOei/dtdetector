@@ -5,6 +5,7 @@ package edu.washington.cs.dt.util;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+import com.thoughtworks.xstream.security.AnyTypePermission;
 import edu.illinois.cs.dt.tools.diagnosis.DiffContainer;
 import edu.illinois.diaper.StateCapture;
 import edu.washington.cs.dt.execution.JUnitTestExecution;
@@ -251,6 +252,8 @@ public class JUnitTestExecutor {
 
     private XStream getXStreamInstance() {
         XStream xstream = new XStream(new DomDriver());
+        XStream.setupDefaultSecurity(xstream);
+        xstream.addPermission(AnyTypePermission.ANY);
         xstream.setMode(XStream.XPATH_ABSOLUTE_REFERENCES);
         // Set fields to be omitted during serialization
         xstream.omitField(java.lang.ref.SoftReference.class, "timestamp");

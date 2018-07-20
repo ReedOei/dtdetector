@@ -3,6 +3,7 @@ package edu.illinois.diaper;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 
+import edu.illinois.cs.dt.tools.diagnosis.DiffContainer;
 import edu.illinois.diaper.agent.MainAgent;
 
 import java.io.BufferedWriter;
@@ -52,6 +53,7 @@ import javax.xml.transform.OutputKeys;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Element;
+
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathConstants;
@@ -340,6 +342,38 @@ public class StateCapture implements IStateCapture {
             e.printStackTrace();
         }
     }
+//
+//    public DiffContainer makeDifferenceReport(final Map<String, Object> before, final Map<String, Object> after) {
+//        final StringBuilder sb = new StringBuilder();
+//
+//        final String beforeState = serializeRoots(before);
+//
+//        try {
+//            Diff diff = new Diff(beforeState, serializeRoots(after));
+//            DetailedDiff detDiff = new DetailedDiff(diff);
+//            List differences = detDiff.getAllDifferences();
+//            differences.sort((o1, o2) -> {
+//                Difference d1 = (Difference) o1;
+//                Difference d2 = (Difference) o2;
+//                // Sort based on id, which should represent order in the XML
+//                return Integer.compare(d1.getId(), d2.getId());
+//            });
+//
+//            for (Object object : differences) {
+//                Difference difference = (Difference)object;
+//
+//                sb.append("***********************\n");
+////                sb.append(difference);
+////                sb.append("\n~~~~\n");
+//                makeDifferenceReport(difference, beforeState, sb);
+//                sb.append("***********************\n");
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//
+//        return sb.toString();
+//    }
 
     private void makeDifferenceReport(Difference difference, String xmlDoc, StringBuilder sb) {
         NodeDetail controlNode = difference.getControlNodeDetail();
@@ -360,35 +394,25 @@ public class StateCapture implements IStateCapture {
 
         String[] elems = diffXpath.split("/");
         if (elems.length >= 3) {
-            diffXpath = "/" + elems[1] + "/" + elems[2];
+            diffXpath = "/" + elems[1] + "/" + elems[2] + "/string[1]";
             try {                 
                 XPath xPath =  XPathFactory.newInstance().newXPath();
-                Node n = (Node) xPath.compile(diffXpath).evaluate(stringToXmlDocument(xmlDoc), XPathConstants.NODE);
-                n = n.getChildNodes().item(1);
+                final String root = xPath.compile(diffXpath).evaluate(stringToXmlDocument(xmlDoc), XPathConstants.STRING).toString();
                 sb.append("Static root: ");
-                sb.append(n.getTextContent());
+                sb.append(root);
                 sb.append("\n");
                 sb.append("AUGUST ID: " + difference.getId());
                 sb.append("\n");
+
+                String controlValue = controlNode.getNode().getNodeValue();
+                String foundValue = afterNode.getNode().getNodeValue();
+
+                sb.append(controlValue + " ~> " + foundValue + "\n");
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
         }
-        
-        
-        /*
-        String controlValue = controlNode.getNode().getNodeValue();
-        String foundValue = afterNode.getNode().getNodeValue();
-
-
-        String objectPath = getObjectPathFromNode(n.getParentNode());
-        result += objectPath + "\n";
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            }*/
-        
-        //result += controlValue + " ~> " + foundValue + "\n";
-    }        
+    }
           
 
     private String getObjectPathFromNode(Node n) {
@@ -541,6 +565,12 @@ public class StateCapture implements IStateCapture {
         if (enableLogging) {
             logger.startTimer();
         }
+
+        // Capture system properties. Seems to be a common cause of pollution.
+        for (final String property : System.getProperties().stringPropertyNames()) {
+            nameToInstance.put("System.property." + property, System.getProperty(property));
+        }
+
         Class[] loadedClasses = MainAgent.getInstrumentation().getAllLoadedClasses();
         for (Class c : loadedClasses) {
             // Ignore classes in standard java to get top-level

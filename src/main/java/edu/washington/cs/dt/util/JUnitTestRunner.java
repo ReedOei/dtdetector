@@ -2,9 +2,7 @@ package edu.washington.cs.dt.util;
 
 import edu.illinois.cs.dt.tools.diagnosis.DiffContainer;
 import edu.illinois.cs.dt.tools.diagnosis.StateDiff;
-import edu.illinois.diaper.StateCapture;
 import edu.washington.cs.dt.main.ImpactMain;
-import org.custommonkey.xmlunit.Diff;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -37,7 +35,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

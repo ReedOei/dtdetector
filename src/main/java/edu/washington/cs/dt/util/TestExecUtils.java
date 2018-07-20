@@ -107,11 +107,6 @@ public class TestExecUtils {
         commandList.add("-cp");
         commandList.add(classPath + Globals.pathSep + System.getProperty("java.class.path", null));
 
-//        if(tests.size() < threshhold) {
-//            commandList.add("edu.washington.cs.dt.util.TestRunnerWrapper");
-//            commandList.add(outputFile);
-//            commandList.addAll(tests);
-//        } else {
         Files.createIfNotExistNoExp(testsfile+append);
         Files.writeToFileWithNoExp(tests, testsfile+append);
 
@@ -138,13 +133,7 @@ public class TestExecUtils {
             commandList.add("-separate");
         }
 
-        //        }
-
-        try {
-            java.nio.file.Files.write(Paths.get("temp.txt"), commandList.toString().getBytes());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        System.err.println(String.join(" ", commandList));
         String[] args = commandList.toArray(new String[0]);
 
         File exitFile = new File(exitFileName+append);
@@ -152,7 +141,7 @@ public class TestExecUtils {
     	try{
     		file.delete();
     		exitFile.delete();
-    	}catch(Exception e){
+    	} catch(Exception e){
     		e.printStackTrace();
     	}
 
@@ -163,16 +152,6 @@ public class TestExecUtils {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-
-//        System.out.println("hello");
-
-//        while (!file.exists() && !exitFile.exists()) {
-//        	try {
-//        	    Thread.sleep(1000);
-//        	} catch(InterruptedException ex) {
-//        	    Thread.currentThread().interrupt();
-//        	}
-//        }
 
         proc.destroy();
 
