@@ -676,6 +676,10 @@ public class StateCapture implements IStateCapture {
         }
         return out.toString();
     }
+
+    public String serialize(final Object obj) {
+        return sanitizeXmlChars(getXStreamInstance().toXML(obj));
+    }
     
     /**
      * This is the method that calls XStream to serialize the state map into a string.
@@ -683,7 +687,7 @@ public class StateCapture implements IStateCapture {
      * @param  state  the string to object map representing the roots of the state
      * @return        string representing the serialized input state
      */
-    private String serializeRoots(Map<String, Object> state) {
+    public String serializeRoots(Map<String, Object> state) {
         XStream xstream = getXStreamInstance();
         String s = "";
         try {

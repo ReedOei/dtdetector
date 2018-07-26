@@ -3,7 +3,9 @@ package edu.illinois.cs.dt.tools.diagnosis;
 import edu.illinois.diaper.StateCapture;
 import org.junit.runners.model.Statement;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class StateDiff {
     private final StateCapture sc;
@@ -20,6 +22,16 @@ public class StateDiff {
         statement.evaluate();
         final LinkedHashMap<String, Object> afterCapture = new LinkedHashMap<>(sc.capture());
 
-        return new DiffContainer(testName, beforeCapture, afterCapture);
+        final Map<String, String> beforeSerialized = new HashMap<>();
+        beforeCapture.forEach((k, obj) -> {
+            beforeSerialized.put(k, sc.serialize(obj));
+        });
+
+        final Map<String, String> afterSerialized = new HashMap<>();
+        afterCapture.forEach((k, obj) -> {
+            afterSerialized.put(k, sc.serialize(obj));
+        });
+
+        return new DiffContainer(testName, beforeSerialized, afterSerialized);
     }
 }

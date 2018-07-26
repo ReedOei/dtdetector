@@ -8,7 +8,7 @@ public class DiffContainer {
     private final Map<String, Diff> diffs = new HashMap<>();
     private final String testName;
 
-    public DiffContainer(final String testName, final Map<String, Object> before, final Map<String, Object> after) {
+    public DiffContainer(final String testName, final Map<String, String> before, final Map<String, String> after) {
         this.testName = testName;
 
         for (final String k : after.keySet()) {
