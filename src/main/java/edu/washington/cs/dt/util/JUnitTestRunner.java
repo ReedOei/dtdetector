@@ -32,6 +32,7 @@ import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -135,7 +136,9 @@ public class JUnitTestRunner extends BlockJUnit4ClassRunner {
         List<FrameworkMethod> befores = new ArrayList<>(test.testClass().getAnnotatedMethods(Before.class));
 
         for (final Method method : Utils.getAllMethods(test.javaClass())) {
-            if (method.getName().toLowerCase().equals("setup") && method.getParameterTypes().length == 0) {
+            if (method.getName().toLowerCase().equals("setup") &&
+                    !Modifier.isStatic(method.getModifiers()) &&
+                    method.getParameterTypes().length == 0) {
                 method.setAccessible(true);
 
                 final FrameworkMethod fMethod = new FrameworkMethod(method);
@@ -154,7 +157,9 @@ public class JUnitTestRunner extends BlockJUnit4ClassRunner {
         List<FrameworkMethod> afters = new ArrayList<>(test.testClass().getAnnotatedMethods(After.class));
 
         for (final Method method : Utils.getAllMethods(test.javaClass())) {
-            if (method.getName().toLowerCase().equals("teardown") && method.getParameterTypes().length == 0) {
+            if (method.getName().toLowerCase().equals("teardown") &&
+                    !Modifier.isStatic(method.getModifiers()) &&
+                    method.getParameterTypes().length == 0) {
                 method.setAccessible(true);
 
                 final FrameworkMethod fMethod = new FrameworkMethod(method);
